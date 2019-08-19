@@ -23,6 +23,7 @@ int main(int argc, char * argv[])
   double max_cost = 1e30;
   double max_ratio = 2.;
   int max_faces = 0x7fffffff;
+  int max_vertices = 0x7fffffff;
   bool check_manifold = false;
 
   for (int i = 0; i < argc; ++i) {
@@ -35,6 +36,9 @@ int main(int argc, char * argv[])
       }
       if (strcmp(argv[i], "-f") == 0) {
         sscanf(argv[i + 1], "%d", &max_faces);
+      }
+      if (strcmp(argv[i], "-v") == 0) {
+        sscanf(argv[i + 1], "%d", &max_vertices);
       }
       if (strcmp(argv[i], "-r") == 0) {
         sscanf(argv[i + 1], "%lf", &max_ratio);
@@ -64,6 +68,7 @@ int main(int argc, char * argv[])
     const Eigen::MatrixXd & V,
     const Eigen::MatrixXi & F,
     const size_t max_m,
+    const size_t max_v,
     const double max_cost,
     Eigen::MatrixXd & U,
     Eigen::MatrixXi & G,
@@ -72,6 +77,7 @@ int main(int argc, char * argv[])
     // Original number of faces
     const int orig_m = F.rows();
     // Tracking number of faces
+    int v = V.rows();
     int m = F.rows();
     typedef Eigen::MatrixXd DerivedV;
     typedef Eigen::MatrixXi DerivedF;
@@ -106,7 +112,8 @@ int main(int argc, char * argv[])
       // Only subtract if we're collapsing a real face
       if(f1 < orig_m) m-=1;
       if(f2 < orig_m) m-=1;
-      return (m<=(int)max_m) || (Q.begin()->first >= max_cost);
+      v -= 1;
+      return (m<=(int)max_m) || (Q.begin()->first >= max_cost) || (v <= (int)max_v);
     };
 
     using namespace igl;
@@ -183,7 +190,7 @@ int main(int argc, char * argv[])
     return ret;
   };
 
-  MyDecimate(OV, OF, max_faces, max_cost, V, F, J, I);
+  MyDecimate(OV, OF, max_faces, max_vertices, max_cost, V, F, J, I);
 
   if (check_manifold) {
     std::set<std::pair<int, int> > dedges;
